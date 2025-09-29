@@ -25,15 +25,24 @@ def draw_graph(g, path, label):
 
 def read_graphs(file_name):
     with open(file_name, 'rb') as handle:
-        data = np.array([g[0] for g in pickle.load(handle)], dtype=object)
+        data = pickle.load(handle)
 
     graphs = dict()
     for idx, g in enumerate(data):
+        # Handle different pickle file structures
+        if isinstance(g, tuple):
+            # Some pickle files contain tuples with (graph, value)
+            networkx_graph = g[0]
+        else:
+            # Other pickle files contain the graph directly
+            networkx_graph = g
+            
         tgraph = Graph(idx, eid_auto_increment=True)
-        for n in g.nodes():
-            tgraph.add_vertex(int(n), str(g.nodes[n]['type']))
-        for e in g.edges():
-            tgraph.add_edge(AUTO_EDGE_ID, int(e[0]), int(e[1]), 1, int(g.edges[e]['weight']))
+        # Convert networkx 3.x view objects to lists for compatibility
+        for n in list(networkx_graph.nodes()):
+            tgraph.add_vertex(int(n), str(networkx_graph.nodes[n]['type']))
+        for e in list(networkx_graph.edges()):
+            tgraph.add_edge(AUTO_EDGE_ID, int(e[0]), int(e[1]), 1, int(networkx_graph.edges[e]['weight']))
         graphs[idx] = tgraph
 
     return graphs

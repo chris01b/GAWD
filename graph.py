@@ -9,7 +9,7 @@ import copy
 from math import log2, ceil
 from scipy.special import comb
 import networkx as nx
-from networkx.algorithms.approximation import independent_set
+from networkx.algorithms.approximation import maximum_independent_set
 import numpy as np
 import progressbar
 import time
@@ -73,7 +73,7 @@ def instance_filter_mis(dir_freq_subs, min_support):
 				for in_key2, in_val2 in ins_node_dict.items():
 					if in_key1 != in_key2 and len(in_val1.intersection(in_val2)) > 0:
 						NG.add_edge(in_key1, in_key2)
-			mis = independent_set.maximum_independent_set(NG)
+			mis = maximum_independent_set(NG)
 			del_idx = list(set(ins_idx).difference(mis))
 			dir_freq_subs[dfs_idx].instances = np.delete(dir_freq_subs[dfs_idx].instances, del_idx, 0)
 		if len(dir_freq_subs[dfs_idx].instances) < min_support:
@@ -152,9 +152,10 @@ class Graph(object):
 
 	def calculate_instances_attr_num(self, subset):
 		va = set()
-		subset = subset.reshape(-1)
+		# Flatten the nested list structure - compatible with NumPy 2.0+
+		subset_flat = [item for sublist in subset for item in sublist]
 		for v in self.vertices.values():
-			if v.vid not in subset:
+			if v.vid not in subset_flat:
 				va.add(v.vlb)
 		return len(va) + 1
 
@@ -184,7 +185,8 @@ class Graph(object):
 	def generate_new_edges(self, ins_vertices, ins_edges):
 		new_edges = collections.defaultdict(list)
 		ver_cnt = collections.defaultdict(set)
-		ie_flat = np.array(ins_edges).reshape(-1)
+		# Flatten the nested list structure - compatible with NumPy 2.0+
+		ie_flat = [item for sublist in ins_edges for item in sublist]
 		for e in self.edges.values():
 			sn_frm = [idx for idx, iv in enumerate(ins_vertices) if e.frm in iv]
 			sn_to = [idx for idx, iv in enumerate(ins_vertices) if e.to in iv]
@@ -223,7 +225,9 @@ class Graph(object):
 		### Multiplicities
 		mbits = self.calculate_multiplicities(ins_edges, fs.edge_weight)
 
-		v_num = len(self.vertices) - len(ins_vertices.reshape(-1)) + len(ins)
+		# Flatten the nested list structure - compatible with NumPy 2.0+
+		ins_vertices_flat = [item for sublist in ins_vertices for item in sublist]
+		v_num = len(self.vertices) - len(ins_vertices_flat) + len(ins)
 		vbits = logstar(v_num) + v_num * log2(self.calculate_instances_attr_num(ins_vertices))
 
 		### Rewiring
@@ -234,7 +238,7 @@ class Graph(object):
 		if len(new_edges) != 0:
 			b, s = 0, 0
 			for to in ver_cnt.values():
-				s += log2(comb(v_num, len(set(to))))
+				s += log2(comb(v_num, len(set(to)), exact=False))
 				if len(set(to)) > b:
 					b = len(set(to))
 			rbits = logstar(b) + v_num * log2(b + 1) + s
@@ -253,7 +257,7 @@ class Graph(object):
 		b, s = 0, 0
 		for v in self.vertices.values():
 			sn = len(v.directed_list)
-			s += log2(comb(v_num, sn))
+			s += log2(comb(v_num, sn, exact=False))
 			if sn > b:
 				b = sn
 		rbits = logstar(b) + v_num * log2(b + 1) + s
