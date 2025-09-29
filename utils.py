@@ -42,7 +42,7 @@ def read_graphs(file_name):
         for n in list(networkx_graph.nodes()):
             tgraph.add_vertex(int(n), str(networkx_graph.nodes[n]['type']))
         for e in list(networkx_graph.edges()):
-            tgraph.add_edge(AUTO_EDGE_ID, int(e[0]), int(e[1]), 1, int(networkx_graph.edges[e]['weight']))
+            tgraph.add_edge(AUTO_EDGE_ID, int(e[0]), int(e[1]), 1, networkx_graph.edges[e]['weight'])
         graphs[idx] = tgraph
 
     return graphs

@@ -34,10 +34,10 @@ def eliminate_incorrect_pattern(undir_freq_subs, min_support):
 			ivn = len(ivn)
 			if ien != def_edge_num or ivn != def_vertex_num:
 				del_ins.append(idx2)
-		ufs.instances = list(np.delete(np.array(ufs.instances), del_ins, 0))
-	if len(ufs.instances) < min_support:
-		del_idx.append(idx1)
-	return np.delete(undir_freq_subs, del_idx, 0)
+		ufs.instances = list(np.delete(np.array(ufs.instances), np.array(del_ins, dtype=int), 0))
+		if len(ufs.instances) < min_support:
+			del_idx.append(idx1)
+	return np.delete(undir_freq_subs, np.array(del_idx, dtype=int), 0)
 
 def self_loop_detect(freq_subs, graphs, min_support):
 	freq_subs_tmp = []
@@ -93,7 +93,7 @@ def self_loop_detect(freq_subs, graphs, min_support):
 						for p1, p2 in pdfs_tmp:
 							ins.prev = PDFS(p1, p2, None)
 							ins = ins.prev
-				tmp.instances = np.delete(np.array(tmp.instances), np.array(del_idx), 0)
+				tmp.instances = np.delete(np.array(tmp.instances), np.array(del_idx, dtype=int), 0)
 
 				if len(tmp.instances) >= min_support:
 					add = []
